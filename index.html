@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS 鎖定畫面通知模擬</title>
+    <style>
+        /* 基礎設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            /* 使用 iOS 預設字體 */
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang TC', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 手機螢幕容器 */
+        .iphone-screen {
+            width: 100%;
+            max-width: 414px;
+            height: 896px; /* 模擬大螢幕 iPhone 比例 */
+            position: relative;
+            overflow: hidden;
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            /* 模擬背景桌布漸層 */
+            background: linear-gradient(135deg, #ffc3a0 0%, #ffafbd 25%, #8fd3f4 60%, #00607a 100%);
+        }
+
+        /* 桌布上的額外裝飾曲線 (簡單模擬) */
+        .iphone-screen::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: -20%;
+            width: 150%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 60%);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+            pointer-events: none;
+        }
+
+        /* 鎖定畫面頂部資訊 */
+        .top-info {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 50px;
+            font-size: 18px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 時間 */
+        .time-display {
+            text-align: center;
+            font-size: 96px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-top: -10px;
+            letter-spacing: -2px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* 鎖定畫面小工具 (Widgets) */
+        .widgets-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .weather-widget {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .weather-temp {
+            font-size: 22px;
+            font-weight: 500;
+        }
+
+        .circle-widgets {
+            display: flex;
+            gap: 12px;
+        }
+
+        .widget-circle {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .widget-circle.activity {
+            /* 模擬活動圈圈 */
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #fff;
+        }
+
+        .widget-circle .main-val {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* 通知橫幅 (Notification) */
+        .notification-card {
+            position: absolute;
+            bottom: 120px;
+            left: 16px;
+            right: 16px;
+            background-color: rgba(255, 255, 255, 0.65);
+            /* iOS 毛玻璃效果關鍵 */
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        /* App 圖示 */
+        .app-icon {
+            width: 44px;
+            height: 44px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px; /* 使用 Emoji 模擬機器人 */
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .notif-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .notif-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111;
+        }
+
+        .notif-time {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .notif-body {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        /* 底部快捷按鈕 (手電筒與相機) */
+        .bottom-toggles {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toggle-btn {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="iphone-screen">
+    <div class="top-info">
+        <span>Mon 10</span>
+        <span>NYC 12:41 AM</span>
+    </div>
+
+    <div class="time-display">9:41</div>
+
+    <div class="widgets-container">
+        <div class="weather-widget">
+            <div class="weather-temp">72°</div>
+            <div>Partly Cloudy</div>
+            <div>H:88° L:64°</div>
+        </div>
+
+        <div class="circle-widgets">
+            <div class="widget-circle activity">
+                <span class="main-val">67</span>
+                <span style="font-size: 10px;">50 &nbsp; 78</span>
+            </div>
+            <div class="widget-circle">
+                <span class="main-val">8:29</span>
+                <span>PM</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification-card">
+        <div class="app-icon">🤖</div>
+        
+        <div class="notif-content">
+            <div class="notif-header">
+                <span class="notif-title">您的和服訂單遭到取消！</span>
+                <span class="notif-time">12:24 PM</span>
+            </div>
+            <div class="notif-body">
+                您的訂單 TW-240211-BT 遭到取消，查看原因>>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-toggles">
+        <div class="toggle-btn"></div>
+        <div class="toggle-btn"></div>
+    </div>
+</div>
+
+</body>
+</html>
