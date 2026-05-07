@@ -6,272 +6,78 @@
     <title>訂單取消通知 - 智能客服</title>
     <style>
         /* 基礎設定 */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'PingFang TC', 'Microsoft JhengHei', 'Helvetica Neue', Arial, sans-serif;
-        }
-
-        body {
-            background-color: #333; /* 讓外圍背景變暗，凸顯手機畫面 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', 'Helvetica Neue', Arial, sans-serif; }
+        body { background-color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
         /* 手機版模擬容器 */
-        .app-container {
-            width: 100%;
-            max-width: 414px;
-            height: 896px; /* 模擬手機高度 */
-            background-color: #ffffff;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        }
+        .app-container { width: 100%; max-width: 414px; height: 896px; background-color: #ffffff; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
 
-        /* --- 底層頁面內容 (被半透明遮罩覆蓋) --- */
-        .page-background {
-            height: 100%;
-            overflow-y: auto;
-        }
+        /* 底層頁面內容 */
+        .page-background { height: 100%; overflow-y: auto; }
+        .hero-section { position: relative; width: 100%; height: 250px; background-image: url('unnamed 3.png'); background-size: cover; background-position: center; }
+        .top-bar { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; }
+        .icon-btn { width: 36px; height: 36px; background-color: rgba(255, 255, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; font-weight: bold; }
+        .top-right-icons { display: flex; gap: 10px; }
+        .content-section { padding: 20px; }
+        h1.title { font-size: 26px; color: #222; margin-bottom: 12px; font-weight: bold; }
+        .badges { display: flex; gap: 10px; margin-bottom: 20px; }
+        .badge { background-color: #c8e6c9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: bold; }
 
-        .hero-section {
-            position: relative;
-            width: 100%;
-            height: 250px;
-            background-image: url('unnamed 3.png'); 
-            background-size: cover;
-            background-position: center;
-        }
+        /* 半透明黑色遮罩 */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); z-index: 10; }
 
-        .top-bar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
+        /* 智能客服彈出視窗 */
+        .chat-modal { position: absolute; bottom: 0; left: 0; width: 100%; height: 85%; background-color: #ffffff; border-radius: 24px 24px 0 0; z-index: 20; display: flex; flex-direction: column; box-shadow: 0 -4px 16px rgba(0,0,0,0.15); }
+        .chat-header { display: flex; align-items: center; padding: 20px; font-size: 18px; font-weight: bold; color: #333; border-bottom: 1px solid #f0f0f0; }
+        .back-btn { font-size: 24px; margin-right: auto; cursor: pointer; }
+        .header-title { margin-right: auto; transform: translateX(-12px); }
+        .chat-body { flex-grow: 1; padding: 24px 20px; background-color: #f8f9fa; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; } /* 增加 gap 讓訊息之間有適當距離 */
 
-        .icon-btn {
-            width: 36px;
-            height: 36px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #333;
-            font-weight: bold;
-        }
+        /* 對話氣泡結構 */
+        .message-row { display: flex; align-items: flex-start; gap: 12px; position: relative; }
+        .bot-icon { width: 36px; height: 36px; background-color: #ffffff; border: 2px solid #528b96; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; margin-top: 8px; }
+        .chat-bubble-container { display: flex; flex-direction: column; align-items: flex-end; max-width: 85%; }
+        .chat-bubble { background-color: #e0e0e0; color: #333; padding: 16px; border-radius: 16px; border-top-left-radius: 0; font-size: 14px; line-height: 1.6; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .chat-bubble::before { content: ''; position: absolute; top: 0; left: -10px; width: 0; height: 0; border-top: 12px solid #e0e0e0; border-left: 12px solid transparent; }
+        .chat-timestamp { font-size: 12px; color: #888; margin-top: 4px; }
 
-        .top-right-icons {
-            display: flex;
-            gap: 10px;
-        }
+        /* 用戶對話氣泡特製樣式 */
+        .message-row.user-message { justify-content: flex-end; }
+        .chat-bubble-container.user-container { align-items: flex-end; }
+        .chat-bubble.user-bubble { background-color: #9e9e9e; color: #ffffff; border-radius: 16px; border-bottom-right-radius: 0; }
+        .chat-bubble.user-bubble::before { display: none; } /* 隱藏左上角三角形 */
+        .chat-bubble.user-bubble::after { content: ''; position: absolute; bottom: 0; right: -10px; width: 0; height: 0; border-bottom: 12px solid #9e9e9e; border-right: 12px solid transparent; } /* 右下角小尾巴 */
 
-        .content-section {
-            padding: 20px;
-        }
+        /* 氣泡內部排版 */
+        .alert-title, .solution-title { font-weight: bold; font-size: 15px; margin-bottom: 8px; display: block; }
+        .highlight-text { font-weight: bold; display: block; margin-top: 8px; margin-bottom: 16px; }
+        .bullet-point { margin-bottom: 8px; }
+        .bullet-point strong { color: #222; }
 
-        h1.title {
-            font-size: 26px;
-            color: #222;
-            margin-bottom: 12px;
-            font-weight: bold;
-        }
+        /* 替代方案按鈕 */
+        .action-btn { display: block; width: 100%; background-color: #5baab0; color: #ffffff; text-align: center; padding: 12px 0; border-radius: 8px; font-weight: bold; margin-top: 16px; border: none; cursor: pointer; font-size: 15px; }
 
-        .badges {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        /* --- 新增：橫向卡片輪播區域 --- */
+        .carousel-wrapper { margin-left: 48px; /* 對齊機器人文字，避開頭像寬度 */ overflow-x: auto; padding-bottom: 10px; margin-bottom: -10px; }
+        .carousel-wrapper::-webkit-scrollbar { display: none; /* 隱藏滾動條維持美觀 */ }
+        .carousel { display: flex; gap: 12px; }
+        .shop-card { min-width: 220px; background-color: #e6e6e6; border-radius: 16px; overflow: hidden; flex-shrink: 0; position: relative; padding-bottom: 40px; /* 留空間給底部按鈕 */ }
+        .shop-img { height: 110px; background-size: cover; background-position: center; }
+        .shop-info { padding: 12px; font-size: 13px; color: #333; line-height: 1.5; }
+        .shop-info h4 { font-size: 15px; margin-bottom: 8px; color: #111; }
+        .shop-info ul { padding-left: 18px; margin-bottom: 8px; }
+        .btn-more { position: absolute; bottom: 12px; right: 12px; background-color: #5baab0; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
 
-        .badge {
-            background-color: #c8e6c9;
-            color: #2e7d32;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        /* --- 半透明黑色遮罩 --- */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            z-index: 10;
-        }
-
-        /* --- 智能客服彈出視窗 (Bottom Sheet) --- */
-        .chat-modal {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 75%; /* 佔據畫面下方約 3/4 */
-            background-color: #ffffff;
-            border-radius: 24px 24px 0 0;
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
-        }
-
-        .chat-header {
-            display: flex;
-            align-items: center;
-            padding: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .back-btn {
-            font-size: 24px;
-            margin-right: auto;
-            cursor: pointer;
-        }
-
-        .header-title {
-            margin-right: auto;
-            transform: translateX(-12px); /* 稍微修正置中視覺 */
-        }
-
-        .chat-body {
-            flex-grow: 1;
-            padding: 24px 20px;
-            background-color: #f8f9fa;
-            overflow-y: auto;
-        }
-
-        /* --- 對話氣泡結構 --- */
-        .message-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            position: relative;
-        }
-
-        .bot-icon {
-            width: 36px;
-            height: 36px;
-            background-color: #ffffff;
-            border: 2px solid #528b96;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-            margin-top: 8px;
-        }
-
-        .chat-bubble-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            max-width: 85%;
-        }
-
-        .chat-bubble {
-            background-color: #e0e0e0;
-            color: #333;
-            padding: 16px;
-            border-radius: 16px;
-            border-top-left-radius: 0; /* 讓氣泡尖角指向機器人 */
-            font-size: 14px;
-            line-height: 1.6;
-            position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        /* 氣泡左側的小三角形 */
-        .chat-bubble::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -10px;
-            width: 0;
-            height: 0;
-            border-top: 12px solid #e0e0e0;
-            border-left: 12px solid transparent;
-        }
-
-        .chat-timestamp {
-            font-size: 12px;
-            color: #888;
-            margin-top: 4px;
-        }
-
-        /* --- 氣泡內部文字排版 --- */
-        .alert-title {
-            font-weight: bold;
-            font-size: 15px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .highlight-text {
-            font-weight: bold;
-            display: block;
-            margin-top: 8px;
-            margin-bottom: 16px;
-        }
-
-        .solution-title {
-            font-weight: bold;
-            font-size: 15px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .bullet-point {
-            margin-bottom: 8px;
-        }
-
-        .bullet-point strong {
-            color: #222;
-        }
-
-        /* --- 替代方案按鈕 --- */
-        .action-btn {
-            display: block;
-            width: 100%;
-            background-color: #5baab0; /* 湖水藍/綠色 */
-            color: #ffffff;
-            text-align: center;
-            padding: 12px 0;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 16px;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    
     <div class="page-background">
         <div class="hero-section">
             <div class="top-bar">
                 <div class="icon-btn">‹</div>
-                <div class="top-right-icons">
-                    <div class="icon-btn">↑</div>
-                    <div class="icon-btn">♡</div>
-                </div>
+                <div class="top-right-icons"><div class="icon-btn">↑</div><div class="icon-btn">♡</div></div>
             </div>
         </div>
         <div class="content-section">
@@ -292,35 +98,99 @@
             <div class="header-title">🤖 智能客服</div>
         </div>
         
-        <div class="chat-body">
+        <div class="chat-body" id="chatBody">
             <div class="message-row">
                 <div class="bot-icon">🤖</div>
-                
                 <div class="chat-bubble-container">
                     <div class="chat-bubble">
                         <span class="alert-title">⚠ 通知：您的和服訂單遭到取消！</span>
                         <p>您好，非常抱歉通知您。我們剛收到北投和服體驗的通知，由於店鋪內部將進行管線維修，無法在下個月 22 日為您提供服務，因此</p>
                         <span class="highlight-text">您的訂單 (TW-240212-BT) 已被取消。</span>
-                        
                         <span class="solution-title">別擔心！我已經為您處理了以下事項：</span>
-                        
-                        <div class="bullet-point">
-                            <strong>💰 全額退款：</strong>款項已自動刷退，預計 3-5 個工作天退回您的信用卡。
-                        </div>
-                        
-                        <div class="bullet-point">
-                            <strong>👘 尋找替代方案：</strong>為了不影響您的行程，我已篩選出 3 間位於北投附近、且當天『仍有時段』的高評價和服店。
-                        </div>
-
-                        <button class="action-btn">查看替代方案</button>
+                        <div class="bullet-point"><strong>💰 全額退款：</strong>款項已自動刷退，預計 3-5 個工作天退回您的信用卡。</div>
+                        <div class="bullet-point"><strong>👘 尋找替代方案：</strong>為了不影響您的行程，我已篩選出 3 間位於北投附近、且當天『仍有時段』的高評價和服店。</div>
+                        <button class="action-btn" id="showAlternativesBtn">查看替代方案</button>
                     </div>
                     <div class="chat-timestamp">12:24</div>
                 </div>
             </div>
-        </div>
-    </div>
 
+            <div id="dynamicContent" style="display: none; display: flex; flex-direction: column; gap: 20px;">
+                
+                <div class="message-row user-message">
+                    <div class="chat-bubble-container user-container">
+                        <div class="chat-bubble user-bubble">查看替代方案</div>
+                        <div class="chat-timestamp">13:45</div>
+                    </div>
+                </div>
+
+                <div class="carousel-wrapper">
+                    <div class="carousel">
+                        <div class="shop-card">
+                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=300&q=80');"></div>
+                            <div class="shop-info">
+                                <h4>岡本和服</h4>
+                                <ul>
+                                    <li>距離：距原店家<strong>步行僅 3 分鐘</strong>。</li>
+                                    <li>特色：京都老字號，<strong>有您喜歡的蕾絲和服</strong>。</li>
+                                    <li>價格：$1,250。</li>
+                                    <li>狀態：<strong>09:30、10:00</strong> 時段尚有空位。</li>
+                                </ul>
+                                <button class="btn-more">深入了解>></button>
+                            </div>
+                        </div>
+
+                        <div class="shop-card">
+                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1578559092822-12797e889a26?auto=format&fit=crop&w=300&q=80');"></div>
+                            <div class="shop-info">
+                                <h4>梨花和服</h4>
+                                <ul>
+                                    <li>距離：<strong>步行 5 分鐘</strong>。</li>
+                                    <li>特色：主打年輕網美風格，評價 <strong>4.9 顆星</strong>。</li>
+                                    <li>價格：約 $1,400。</li>
+                                </ul>
+                                <button class="btn-more">深入了解>></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message-row">
+                    <div class="bot-icon">🤖</div>
+                    <div class="chat-bubble-container">
+                        <div class="chat-bubble">
+                            建議選擇『<strong>岡本和服</strong>』，因為<strong>距離與風格最接近您原本的計畫</strong>。要幫您一鍵轉訂這間的 10:00 時段嗎？
+                        </div>
+                        <div class="chat-timestamp">13:45</div>
+                    </div>
+                </div>
+
+            </div>
+            </div>
+    </div>
 </div>
+
+<script>
+    // 加入互動邏輯
+    document.getElementById('showAlternativesBtn').addEventListener('click', function() {
+        // 1. 隱藏原本的按鈕 (模擬已點擊的狀態)
+        this.style.display = 'none';
+        
+        // 2. 將包含用戶回覆、卡片、機器人後續回覆的區塊顯示出來
+        const dynamicContent = document.getElementById('dynamicContent');
+        // 因為我在 CSS 行內寫了 flex 屬性，這裡恢復它的 flex 佈局
+        dynamicContent.style.display = 'flex'; 
+        
+        // 3. 平滑滾動到對話框最底部，確保使用者看到最新的訊息
+        const chatBody = document.getElementById('chatBody');
+        setTimeout(() => {
+            chatBody.scrollTo({
+                top: chatBody.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50); // 給瀏覽器一點時間渲染 DOM
+    });
+</script>
 
 </body>
 </html>
