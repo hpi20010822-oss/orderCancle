@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>訂單取消通知 - 智能客服</title>
+    <title>訂單取消通知 - 滑動卡片版</title>
     <style>
         /* 基礎設定 */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'PingFang TC', 'Microsoft JhengHei', 'Helvetica Neue', Arial, sans-serif; }
@@ -14,7 +14,7 @@
 
         /* 底層頁面內容 */
         .page-background { height: 100%; overflow-y: auto; }
-        .hero-section { position: relative; width: 100%; height: 250px; background-image: url('unnamed 3.png'); background-size: cover; background-position: center; }
+        .hero-section { position: relative; width: 100%; height: 250px; background-image: url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=600&auto=format&fit=crop'); background-size: cover; background-position: center; }
         .top-bar { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; }
         .icon-btn { width: 36px; height: 36px; background-color: rgba(255, 255, 255, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; font-weight: bold; }
         .top-right-icons { display: flex; gap: 10px; }
@@ -31,7 +31,7 @@
         .chat-header { display: flex; align-items: center; padding: 20px; font-size: 18px; font-weight: bold; color: #333; border-bottom: 1px solid #f0f0f0; }
         .back-btn { font-size: 24px; margin-right: auto; cursor: pointer; }
         .header-title { margin-right: auto; transform: translateX(-12px); }
-        .chat-body { flex-grow: 1; padding: 24px 20px; background-color: #f8f9fa; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; } /* 增加 gap 讓訊息之間有適當距離 */
+        .chat-body { flex-grow: 1; padding: 24px 20px; background-color: #fcfcfc; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; } 
 
         /* 對話氣泡結構 */
         .message-row { display: flex; align-items: flex-start; gap: 12px; position: relative; }
@@ -45,8 +45,8 @@
         .message-row.user-message { justify-content: flex-end; }
         .chat-bubble-container.user-container { align-items: flex-end; }
         .chat-bubble.user-bubble { background-color: #9e9e9e; color: #ffffff; border-radius: 16px; border-bottom-right-radius: 0; }
-        .chat-bubble.user-bubble::before { display: none; } /* 隱藏左上角三角形 */
-        .chat-bubble.user-bubble::after { content: ''; position: absolute; bottom: 0; right: -10px; width: 0; height: 0; border-bottom: 12px solid #9e9e9e; border-right: 12px solid transparent; } /* 右下角小尾巴 */
+        .chat-bubble.user-bubble::before { display: none; }
+        .chat-bubble.user-bubble::after { content: ''; position: absolute; bottom: 0; right: -10px; width: 0; height: 0; border-bottom: 12px solid #9e9e9e; border-right: 12px solid transparent; }
 
         /* 氣泡內部排版 */
         .alert-title, .solution-title { font-weight: bold; font-size: 15px; margin-bottom: 8px; display: block; }
@@ -54,20 +54,78 @@
         .bullet-point { margin-bottom: 8px; }
         .bullet-point strong { color: #222; }
 
-        /* 替代方案按鈕 */
+        /* 原本的替代方案按鈕 */
         .action-btn { display: block; width: 100%; background-color: #5baab0; color: #ffffff; text-align: center; padding: 12px 0; border-radius: 8px; font-weight: bold; margin-top: 16px; border: none; cursor: pointer; font-size: 15px; }
 
-        /* --- 新增：橫向卡片輪播區域 --- */
-        .carousel-wrapper { margin-left: 48px; /* 對齊機器人文字，避開頭像寬度 */ overflow-x: auto; padding-bottom: 10px; margin-bottom: -10px; }
-        .carousel-wrapper::-webkit-scrollbar { display: none; /* 隱藏滾動條維持美觀 */ }
-        .carousel { display: flex; gap: 12px; }
-        .shop-card { min-width: 220px; background-color: #e6e6e6; border-radius: 16px; overflow: hidden; flex-shrink: 0; position: relative; padding-bottom: 40px; /* 留空間給底部按鈕 */ }
-        .shop-img { height: 110px; background-size: cover; background-position: center; }
-        .shop-info { padding: 12px; font-size: 13px; color: #333; line-height: 1.5; }
-        .shop-info h4 { font-size: 15px; margin-bottom: 8px; color: #111; }
-        .shop-info ul { padding-left: 18px; margin-bottom: 8px; }
-        .btn-more { position: absolute; bottom: 12px; right: 12px; background-color: #5baab0; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        /* =========================================
+           橫向滑動卡片 (Carousel) 專區
+           ========================================= */
+        .carousel-wrapper { 
+            margin-left: 48px; /* 對齊對話框，避開頭像寬度 */ 
+            overflow-x: auto; 
+            padding-bottom: 10px; 
+            
+            /* 加入 Scroll Snapping 讓滑動手感像原生 App */
+            scroll-snap-type: x mandatory; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
+        /* 隱藏滾動條 */
+        .carousel-wrapper::-webkit-scrollbar { display: none; }
+        
+        .carousel { 
+            display: flex; 
+            gap: 12px; 
+            /* 右側留白，讓最後一張卡片不會貼死邊緣 */
+            padding-right: 20px; 
+        }
 
+        .shop-card { 
+            min-width: 250px; /* 控制卡片寬度，讓第二張卡片露出一小截暗示可滑動 */
+            background-color: #eeeeee; /* 圖片中淡淡的灰底色 */
+            border-radius: 16px; 
+            overflow: hidden; 
+            flex-shrink: 0; 
+            position: relative; 
+            padding-bottom: 48px; /* 留空間給底部按鈕 */ 
+            
+            /* 讓卡片滑動時會自動對齊最左邊 */
+            scroll-snap-align: start; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+        }
+
+        .shop-img { 
+            height: 130px; 
+            background-size: cover; 
+            background-position: center; 
+        }
+
+        .shop-info { 
+            padding: 14px; 
+            font-size: 13px; 
+            color: #333; 
+            line-height: 1.6; 
+        }
+        .shop-info h4 { font-size: 16px; margin-bottom: 10px; color: #111; }
+        
+        /* 客製化列表樣式，精準還原圖片 */
+        .shop-info ul { list-style: none; padding-left: 0; }
+        .shop-info ul li { position: relative; padding-left: 12px; margin-bottom: 4px; }
+        .shop-info ul li::before { content: '•'; position: absolute; left: 0; color: #333; font-weight: bold; }
+
+        .btn-more { 
+            position: absolute; 
+            bottom: 12px; 
+            right: 12px; 
+            background-color: #5baab0; 
+            color: white; 
+            border: none; 
+            padding: 6px 16px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -109,13 +167,14 @@
                         <span class="solution-title">別擔心！我已經為您處理了以下事項：</span>
                         <div class="bullet-point"><strong>💰 全額退款：</strong>款項已自動刷退，預計 3-5 個工作天退回您的信用卡。</div>
                         <div class="bullet-point"><strong>👘 尋找替代方案：</strong>為了不影響您的行程，我已篩選出 3 間位於北投附近、且當天『仍有時段』的高評價和服店。</div>
+                        
                         <button class="action-btn" id="showAlternativesBtn">查看替代方案</button>
                     </div>
                     <div class="chat-timestamp">12:24</div>
                 </div>
             </div>
 
-            <div id="dynamicContent" style="display: none; display: flex; flex-direction: column; gap: 20px;">
+            <div id="dynamicContent" style="display: none; flex-direction: column; gap: 20px;">
                 
                 <div class="message-row user-message">
                     <div class="chat-bubble-container user-container">
@@ -127,7 +186,7 @@
                 <div class="carousel-wrapper">
                     <div class="carousel">
                         <div class="shop-card">
-                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=300&q=80');"></div>
+                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=400&q=80');"></div>
                             <div class="shop-info">
                                 <h4>岡本和服</h4>
                                 <ul>
@@ -141,12 +200,12 @@
                         </div>
 
                         <div class="shop-card">
-                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1578559092822-12797e889a26?auto=format&fit=crop&w=300&q=80');"></div>
+                            <div class="shop-img" style="background-image: url('https://images.unsplash.com/photo-1578559092822-12797e889a26?auto=format&fit=crop&w=400&q=80');"></div>
                             <div class="shop-info">
                                 <h4>梨花和服</h4>
                                 <ul>
                                     <li>距離：<strong>步行 5 分鐘</strong>。</li>
-                                    <li>特色：主打年輕網美風格，評價 <strong>4.9 顆星</strong>。</li>
+                                    <li>特色：主打年輕網美風，Google評價 <strong>4.9 顆星</strong>。</li>
                                     <li>價格：約 $1,400。</li>
                                 </ul>
                                 <button class="btn-more">深入了解>></button>
@@ -166,29 +225,28 @@
                 </div>
 
             </div>
-            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 加入互動邏輯
+    // 綁定點擊事件
     document.getElementById('showAlternativesBtn').addEventListener('click', function() {
-        // 1. 隱藏原本的按鈕 (模擬已點擊的狀態)
+        // 隱藏原本的按鈕
         this.style.display = 'none';
         
-        // 2. 將包含用戶回覆、卡片、機器人後續回覆的區塊顯示出來
+        // 顯示隱藏的卡片區塊
         const dynamicContent = document.getElementById('dynamicContent');
-        // 因為我在 CSS 行內寫了 flex 屬性，這裡恢復它的 flex 佈局
         dynamicContent.style.display = 'flex'; 
         
-        // 3. 平滑滾動到對話框最底部，確保使用者看到最新的訊息
+        // 平滑滾動到底部
         const chatBody = document.getElementById('chatBody');
         setTimeout(() => {
             chatBody.scrollTo({
                 top: chatBody.scrollHeight,
                 behavior: 'smooth'
             });
-        }, 50); // 給瀏覽器一點時間渲染 DOM
+        }, 100); // 稍微加長延遲確保圖片與 DOM 渲染完畢再滾動
     });
 </script>
 
