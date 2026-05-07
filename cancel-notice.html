@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單取消通知 - 智能客服</title>
+    <style>
+        /* 基礎設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #333; /* 讓外圍背景變暗，凸顯手機畫面 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 手機版模擬容器 */
+        .app-container {
+            width: 100%;
+            max-width: 414px;
+            height: 896px; /* 模擬手機高度 */
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        /* --- 底層頁面內容 (被半透明遮罩覆蓋) --- */
+        .page-background {
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .hero-section {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background-image: url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=600&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .top-right-icons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .content-section {
+            padding: 20px;
+        }
+
+        h1.title {
+            font-size: 26px;
+            color: #222;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* --- 半透明黑色遮罩 --- */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        /* --- 智能客服彈出視窗 (Bottom Sheet) --- */
+        .chat-modal {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 75%; /* 佔據畫面下方約 3/4 */
+            background-color: #ffffff;
+            border-radius: 24px 24px 0 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .back-btn {
+            font-size: 24px;
+            margin-right: auto;
+            cursor: pointer;
+        }
+
+        .header-title {
+            margin-right: auto;
+            transform: translateX(-12px); /* 稍微修正置中視覺 */
+        }
+
+        .chat-body {
+            flex-grow: 1;
+            padding: 24px 20px;
+            background-color: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        /* --- 對話氣泡結構 --- */
+        .message-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            position: relative;
+        }
+
+        .bot-icon {
+            width: 36px;
+            height: 36px;
+            background-color: #ffffff;
+            border: 2px solid #528b96;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 8px;
+        }
+
+        .chat-bubble-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            max-width: 85%;
+        }
+
+        .chat-bubble {
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 16px;
+            border-radius: 16px;
+            border-top-left-radius: 0; /* 讓氣泡尖角指向機器人 */
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 氣泡左側的小三角形 */
+        .chat-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-top: 12px solid #e0e0e0;
+            border-left: 12px solid transparent;
+        }
+
+        .chat-timestamp {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* --- 氣泡內部文字排版 --- */
+        .alert-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .highlight-text {
+            font-weight: bold;
+            display: block;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+
+        .solution-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .bullet-point {
+            margin-bottom: 8px;
+        }
+
+        .bullet-point strong {
+            color: #222;
+        }
+
+        /* --- 替代方案按鈕 --- */
+        .action-btn {
+            display: block;
+            width: 100%;
+            background-color: #5baab0; /* 湖水藍/綠色 */
+            color: #ffffff;
+            text-align: center;
+            padding: 12px 0;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 16px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="page-background">
+        <div class="hero-section">
+            <div class="top-bar">
+                <div class="icon-btn">‹</div>
+                <div class="top-right-icons">
+                    <div class="icon-btn">↑</div>
+                    <div class="icon-btn">♡</div>
+                </div>
+            </div>
+        </div>
+        <div class="content-section">
+            <h1 class="title">北投和服體驗</h1>
+            <div class="badges">
+                <div class="badge" style="background-color: #e0e0e0; color: #555;">🤵 需聯絡店家預約時間</div>
+                <div class="badge">✅ 免費取消 (前24小時)</div>
+            </div>
+            <p>👘 偽出國和服浴衣體驗，嚴選多種花色的精緻浴衣供挑選！</p>
+        </div>
+    </div>
+
+    <div class="overlay"></div>
+
+    <div class="chat-modal">
+        <div class="chat-header">
+            <div class="back-btn">‹</div>
+            <div class="header-title">🤖 智能客服</div>
+        </div>
+        
+        <div class="chat-body">
+            <div class="message-row">
+                <div class="bot-icon">🤖</div>
+                
+                <div class="chat-bubble-container">
+                    <div class="chat-bubble">
+                        <span class="alert-title">⚠ 通知：您的和服訂單遭到取消！</span>
+                        <p>您好，非常抱歉通知您。我們剛收到北投和服體驗的通知，由於店鋪內部將進行管線維修，無法在下個月 22 日為您提供服務，因此</p>
+                        <span class="highlight-text">您的訂單 (TW-240212-BT) 已被取消。</span>
+                        
+                        <span class="solution-title">別擔心！我已經為您處理了以下事項：</span>
+                        
+                        <div class="bullet-point">
+                            <strong>💰 全額退款：</strong>款項已自動刷退，預計 3-5 個工作天退回您的信用卡。
+                        </div>
+                        
+                        <div class="bullet-point">
+                            <strong>👘 尋找替代方案：</strong>為了不影響您的行程，我已篩選出 3 間位於北投附近、且當天『仍有時段』的高評價和服店。
+                        </div>
+
+                        <button class="action-btn">查看替代方案</button>
+                    </div>
+                    <div class="chat-timestamp">12:24</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

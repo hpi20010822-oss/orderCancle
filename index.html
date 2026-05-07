@@ -138,6 +138,11 @@
             display: flex;
             gap: 14px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            
+            /* 新增這三行來重置 a 標籤的預設樣式 */
+            text-decoration: none; 
+            color: inherit;
+            cursor: pointer;
         }
 
         /* App 圖示 */
@@ -235,7 +240,7 @@
         </div>
     </div>
 
-    <div class="notification-card">
+    <a href="cancel-notice.html" class="notification-card">
         <div class="app-icon">🤖</div>
         
         <div class="notif-content">
@@ -247,7 +252,7 @@
                 您的訂單 TW-240211-BT 遭到取消，查看原因>>
             </div>
         </div>
-    </div>
+    </a>
 
     <div class="bottom-toggles">
         <div class="toggle-btn"></div>
